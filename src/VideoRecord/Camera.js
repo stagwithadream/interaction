@@ -1,13 +1,16 @@
 import React, {PureComponent} from 'react';
 import { View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import {RNCamera} from 'react-native-camera';
+import CameraRoll from "@react-native-community/cameraroll";
+
 export default class Camera extends PureComponent {  
     
     constructor(props) {
          super(props);
          this.state = {
            recording: false,
-           currentRecording: null
+           currentRecording: null,
+           showRecording: false
          }
         this.startRecording = this.startRecording.bind(this);
         this.stopRecording = this.stopRecording.bind(this);
@@ -18,12 +21,15 @@ export default class Camera extends PureComponent {
       // default to mp4 for android as codec is not set
       const { uri, codec = "mp4" } = await this.camera.recordAsync();
       console.log(uri);
+      console.log(CameraRoll.getAlbums());
+      CameraRoll.save(uri)
+
       this.setState({currentRecording: uri});
   }
 
   stopRecording() {
     this.camera.stopRecording();
-    this.setState({ recording: false});
+    this.setState({ recording: false, showRecording: true});
 }
   
 render() {
@@ -69,7 +75,7 @@ render() {
               >
               </TouchableOpacity> }
           </View>
-        </View> 
+      </View> 
     </View>
     );
   }}
