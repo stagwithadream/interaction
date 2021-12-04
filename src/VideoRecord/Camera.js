@@ -2,6 +2,8 @@ import React, {PureComponent} from 'react';
 import { View, StyleSheet, Text, TouchableOpacity} from 'react-native';
 import {RNCamera} from 'react-native-camera';
 import CameraRoll from "@react-native-community/cameraroll";
+import Icon from 'react-native-vector-icons/FontAwesome';
+import moment from 'moment';
 
 export default class Camera extends PureComponent {  
     
@@ -10,14 +12,63 @@ export default class Camera extends PureComponent {
          this.state = {
            recording: false,
            currentRecording: null,
-           showRecording: false
+           showRecording: false,
+           cameType: RNCamera.Constants.Type.front,
+           time: 600,
          }
         this.startRecording = this.startRecording.bind(this);
         this.stopRecording = this.stopRecording.bind(this);
+        this.flipSide = this.flipSide.bind(this);
+        this.startTimer = this.startTimer.bind(this);
+        this.stopTimer = this.stopTimer.bind(this);
+        this.convertTimeString = this.convertTimeString.bind(this);
+        this.renderTimer = this.renderTimer.bind(this);
+    }
+
+    flipSide() {
+      if (this.state.cameType === RNCamera.Constants.Type.front ){
+        this.setState({cameType: RNCamera.Constants.Type.back});
+      } else {
+        this.setState({cameType: RNCamera.Constants.Type.front});
+      }
+      
+    }
+    startTimer = () => {
+      this.timer = setInterval(() => {
+        const time = this.state.time - 1;
+        this.setState({ time });
+        console.log(this.state.time);
+        if (this.state.time <= 0 ) {
+          this.stopRecording();
+        }
+      }, 1000);
+    }
+  
+    stopTimer = () => {
+      if (this.timer) clearInterval(this.timer);
+    }
+
+    convertTimeString = (time) => {
+      return moment().startOf('day').seconds(time).format('mm:ss');
+    }
+  
+    renderTimer() {
+      const  time  = this.state.time;
+      return (
+       
+        <View style={{flex: 1, left: '50%', top: '2%'}}>
+          <View style={styles.timer}>
+            <Text style={styles.timerText}>
+                {this.convertTimeString(time)}
+            </Text>
+          </View>
+        </View> 
+      );
     }
 
     async startRecording() {
       this.setState({ recording: true });
+      this.startTimer();
       // default to mp4 for android as codec is not set
       const { uri, codec = "mp4" } = await this.camera.recordAsync();
       console.log(uri);
@@ -29,54 +80,79 @@ export default class Camera extends PureComponent {
 
   stopRecording() {
     this.camera.stopRecording();
-    this.setState({ recording: false, showRecording: true});
+    this.stopTimer();
+    this.setState({ recording: false, showRecording: true, time :600});
 }
+
+
   
 render() {
   return (
     <View style={{ flex: 1}}>
-      
-      <View style={styles.container}>
-            <RNCamera
-            ref={ref => {
-              this.camera = ref;
-            }}
-            style={styles.preview}
-            orientation="landscapeRight"
-            type={RNCamera.Constants.Type.back}
-            flashMode={RNCamera.Constants.FlashMode.on}
-            defaultVideoQuality={RNCamera.Constants.VideoQuality["480p"]}
-            androidCameraPermissionOptions={{
-              title: 'Permission to use camera',
-              message: 'We need your permission to use your camera',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}
-            androidRecordAudioPermissionOptions={{
-              title: 'Permission to use audio recording',
-              message: 'We need your permission to use your audio',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}
+         
+        <View style={styles.container}>
+              <RNCamera
+              ref={ref => {
+                this.camera = ref;
+              }}
+              style={styles.preview}
+              orientation="landscapeLeft"
+              type={this.state.cameType}
+              flashMode={RNCamera.Constants.FlashMode.on}
+              defaultVideoQuality={RNCamera.Constants.VideoQuality["480p"]}
+              androidCameraPermissionOptions={{
+                title: 'Permission to use camera',
+                message: 'We need your permission to use your camera',
+                buttonPositive: 'Ok',
+                buttonNegative: 'Cancel',
+              }}
+              androidRecordAudioPermissionOptions={{
+                title: 'Permission to use audio recording',
+                message: 'We need your permission to use your audio',
+                buttonPositive: 'Ok',
+                buttonNegative: 'Cancel',
+              }}
+              
+            >{this.state.recording ? this.renderTimer : null}</RNCamera>
+            
+        <View style={{ flex : 1, justifyContent: 'flex-end', borderWith: 3, borderColor: 'yellow', bottom: 0}}>
+              <View style={{flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                  <View style={{flex: 1, bottom: 20, right: '180%', position: 'absolute'}}>
+                      
+                      <TouchableOpacity
+                            style={{
+                                opacity: 0.8,
+                                color: "white"
+                              }}
+                            onPress={this.flipSide}
+                            >
+                            <Icon name="refresh"  
+                                  color="white"
+                                  size={30}/>
+                        </TouchableOpacity>
+                  </View>
+                  <View style={{flex: 1,alignSelf: 'center'}}>
+                    <View style={styles.iconContainer}>
+                    {!this.state.recording  ? 
+                      <TouchableOpacity
+                      style={styles.recordingOn}
+                      onPress={() => {this.startRecording()}}
+                      >
+                      </TouchableOpacity> :
+                      <TouchableOpacity
+                      style={styles.recordingOff}
+                      onPress={() => {this.stopRecording()}}
+                      >
+                      </TouchableOpacity> 
+                      }
+                    </View>
+                
+                  </View>
+              </View>
+        </View>
+     </View>
+    </View> 
     
-          />
-          <View
-            style={styles.iconContainer}
-          >
-              {!this.state.recording  ? 
-              <TouchableOpacity
-              style={styles.recordingOn}
-              onPress={() => {this.startRecording()}}
-              >
-              </TouchableOpacity> :
-              <TouchableOpacity
-              style={styles.recordingOff}
-              onPress={() => {this.stopRecording()}}
-              >
-              </TouchableOpacity> }
-          </View>
-      </View> 
-    </View>
     );
   }}
 
@@ -86,21 +162,24 @@ render() {
       flex: 1,
       width: '100%',
       backgroundColor: 'transparent',
-      flexDirection: 'row'
+      flexDirection: 'row',
+      position: 'relative'
+     // height: '90%'
     },
       iconContainer: {
+        flex: 1,
         position: 'absolute',
-        left: '40%',
-        top: '89%',
-        flexDirection: 'column',
+        right: '80%',
+      //  top: '89%',
+       // flexDirection: 'column',
         justifyContent: 'space-between',
         borderRadius: 70,
         borderWidth: 2,
         height: 70,
         width: 70,
         borderColor: 'white',
-        bottom:0,
-        alignSelf: 'flex-end'
+        bottom:10,
+     //   alignSelf: 'flex-end'
     },
     recordingOn: {
       top: '12%',
@@ -116,7 +195,7 @@ render() {
       width:  35,
       height: 35,
       backgroundColor:'red',
-        borderRadius:10
+      borderRadius:10
     },
 
       preview: {
@@ -133,4 +212,19 @@ render() {
         alignSelf: 'center',
         margin: 20,
       },
+      timerText: {
+        fontSize: 23, 
+        color: 'white', 
+        opacity: 1.0, 
+        fontWeight: 'bold', 
+        paddingLeft: 13, 
+        paddingTop: 8
+      },
+      timer: {
+        backgroundColor: '#5e5a5a', 
+        borderRadius: 5, 
+        height:50, 
+        width: 80
+      }
+
   });
