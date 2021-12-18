@@ -15,6 +15,7 @@ export default class Camera extends PureComponent {
            showRecording: false,
            cameType: RNCamera.Constants.Type.front,
            time: 600,
+           canDetectFaces: false
          }
         this.startRecording = this.startRecording.bind(this);
         this.stopRecording = this.stopRecording.bind(this);
@@ -23,6 +24,8 @@ export default class Camera extends PureComponent {
         this.stopTimer = this.stopTimer.bind(this);
         this.convertTimeString = this.convertTimeString.bind(this);
         this.renderTimer = this.renderTimer.bind(this);
+        this.onFaceDetected = this. onFaceDetected.bind(this);
+        this.toggle = this.toggle.bind(this);
     }
 
     flipSide() {
@@ -33,11 +36,17 @@ export default class Camera extends PureComponent {
       }
       
     }
+
+    toggle = value => () => this.setState(prevState => ({ [value]: !prevState[value] }));
+
+    // onFaceDetected(obj) {
+    //   console.log("inside");
+    //   console.log(obj);
+    // }
     startTimer = () => {
       this.timer = setInterval(() => {
         const time = this.state.time - 1;
         this.setState({ time });
-        console.log(this.state.time);
         if (this.state.time <= 0 ) {
           this.stopRecording();
         }
@@ -67,7 +76,7 @@ export default class Camera extends PureComponent {
     }
 
     async startRecording() {
-      this.setState({ recording: true });
+      this.setState({ recording: true,canDetectFaces: true });
       this.startTimer();
       // default to mp4 for android as codec is not set
       const { uri, codec = "mp4" } = await this.camera.recordAsync();
@@ -78,15 +87,19 @@ export default class Camera extends PureComponent {
       this.setState({currentRecording: uri});
   }
 
+  onFaceDetected () {
+    console.log("inside");
+  }
+
   stopRecording() {
     this.camera.stopRecording();
     this.stopTimer();
-    this.setState({ recording: false, showRecording: true, time :600});
+    this.setState({ recording: false, showRecording: true, time :600, canDetectFaces: false});
 }
 
-
-  
 render() {
+  const { canDetectFaces } = this.state;
+  console.log(this.state.canDetectFaces);
   return (
     <View style={{ flex: 1}}>
          
@@ -96,6 +109,9 @@ render() {
                 this.camera = ref;
               }}
               style={styles.preview}
+              faceDetectionMode={RNCamera.Constants.FaceDetection.Mode.accurate}
+              onFacesDetected={canDetectFaces ?  console.log("inside") : null}
+              onFaceDetectionError={(obj) => console.log(obj)}
               orientation="landscapeLeft"
               type={this.state.cameType}
               flashMode={RNCamera.Constants.FlashMode.on}
