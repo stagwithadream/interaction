@@ -1,3 +1,4 @@
+
 /**
  * Sample React Native App
  * https://github.com/facebook/react-native
@@ -9,6 +10,7 @@
 import React from 'react';
 import type {Node} from 'react';
 import Camera from './src/VideoRecord/Camera.js';
+import CameraScreen from './src/VideoRecord/CameraScreen.js';
 import {
   SafeAreaView,
   ScrollView,
@@ -39,7 +41,7 @@ const App: () => Node = () => {
     <View style={styles.container}>
        <Camera/>
     </View>
-   
+ //  <CameraScreen/>
   );
 };
 

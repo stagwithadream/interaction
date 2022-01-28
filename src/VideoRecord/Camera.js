@@ -4,6 +4,11 @@ import {RNCamera} from 'react-native-camera';
 import CameraRoll from "@react-native-community/cameraroll";
 import Icon from 'react-native-vector-icons/FontAwesome';
 import moment from 'moment';
+import ViewShot from "react-native-view-shot";
+import FaceDetection, { FaceDetectorContourMode, FaceDetectorLandmarkMode, FaceContourType } from "react-native-face-detection";
+import ImageRotate from 'react-native-image-rotate';
+import { Dimensions } from 'react-native';
+import { captureRef } from "react-native-view-shot";
 
 export default class Camera extends PureComponent {  
     
@@ -15,14 +20,21 @@ export default class Camera extends PureComponent {
            showRecording: false,
            cameType: RNCamera.Constants.Type.front,
            time: 600,
+           canDetectFaces: false,
+           faces: []
          }
         this.startRecording = this.startRecording.bind(this);
         this.stopRecording = this.stopRecording.bind(this);
         this.flipSide = this.flipSide.bind(this);
         this.startTimer = this.startTimer.bind(this);
+        this.takePicture = this.takePicture.bind(this);
         this.stopTimer = this.stopTimer.bind(this);
+        this.takePictures = this.takePictures.bind(this);
         this.convertTimeString = this.convertTimeString.bind(this);
         this.renderTimer = this.renderTimer.bind(this);
+      //  this.facesDetected = this.facesDetected.bind(this);
+        this.toggle = this.toggle.bind(this);
+        this.viewShot = {};
     }
 
     flipSide() {
@@ -33,19 +45,71 @@ export default class Camera extends PureComponent {
       }
       
     }
+
+    toggle = value => () => this.setState(prevState => ({ [value]: !prevState[value] }));
+
     startTimer = () => {
       this.timer = setInterval(() => {
         const time = this.state.time - 1;
         this.setState({ time });
-        console.log(this.state.time);
         if (this.state.time <= 0 ) {
           this.stopRecording();
         }
       }, 1000);
     }
+
+    takePictures = () => {
+     this.t2 = setInterval(() => {
+       if(this.viewShot != null) {
+        this.viewShot.capture().then(uri => {
+          console.log("do something with ", uri);
+        //  CameraRoll.save(uri);
+        const windowWidth = Dimensions.get('window').width;
+        const windowHeight = Dimensions.get('window').height;
+        console.log(windowHeight);
+        console.log(windowWidth);
+        if (windowHeight < windowWidth) {
+          console.log("in");
+         uri =  ImageRotate.rotateImage(
+            uri,
+            90,
+            (newUri) => {
+                console.log(newUri, 'uri')
+                return newUri;
+            },
+            (error) => {
+                console.error(error);
+            }
+        );
+        CameraRoll.save(uri);
+        }
+          this.takePicture(uri);
+        });
+       }
+      
+      }, 2000);
+    }
+
+    takePicture = async (imagePath) => {
+      const options = {
+        landmarkMode: FaceDetectorLandmarkMode.ALL,
+        contourMode: FaceDetectorContourMode.ALL
+      };
+      const faces = await FaceDetection.processImage(imagePath, options);
+      console.log(faces.length);
+      if(faces.length !=0) {
+        faces.forEach((face) => {
+          console.log(face);
+          console.log(face.landmarks);
+        });
+      }
+      this.setState({faces: faces});
+  };
+  
   
     stopTimer = () => {
       if (this.timer) clearInterval(this.timer);
+      if(this.t2) clearInterval(this.t2);
     }
 
     convertTimeString = (time) => {
@@ -55,11 +119,13 @@ export default class Camera extends PureComponent {
     renderTimer() {
       const  time  = this.state.time;
       return (
-       
         <View style={{flex: 1, left: '50%', top: '2%'}}>
           <View style={styles.timer}>
             <Text style={styles.timerText}>
                 {this.convertTimeString(time)}
+            </Text>
+            <Text style={styles.timerText}>
+            faces:{this.state.faces.length}
             </Text>
           </View>
         </View> 
@@ -67,30 +133,40 @@ export default class Camera extends PureComponent {
     }
 
     async startRecording() {
-      this.setState({ recording: true });
+      this.setState({ recording: true,canDetectFaces: true });
+      this.takePictures();
       this.startTimer();
       // default to mp4 for android as codec is not set
       const { uri, codec = "mp4" } = await this.camera.recordAsync();
       console.log(uri);
       console.log(CameraRoll.getAlbums());
+
       CameraRoll.save(uri)
 
       this.setState({currentRecording: uri});
-  }
+    }
+
 
   stopRecording() {
     this.camera.stopRecording();
     this.stopTimer();
-    this.setState({ recording: false, showRecording: true, time :600});
+    this.setState({ recording: false, showRecording: true, time :600, canDetectFaces: false});
 }
 
+renderFaces = () => (
+  <View style={styles.facesContainer} pointerEvents="none">
+    {this.state.faces.map(this.renderFace)}
+  </View>
+);
 
-  
 render() {
+  const { canDetectFaces } = this.state;
   return (
     <View style={{ flex: 1}}>
          
-        <View style={styles.container}>
+        <ViewShot style={styles.container} ref="viewShot" options={{ format: "jpg", quality: 0.9 }} ref={ref => {
+                this.viewShot = ref;
+              }}>
               <RNCamera
               ref={ref => {
                 this.camera = ref;
@@ -113,8 +189,13 @@ render() {
                 buttonNegative: 'Cancel',
               }}
               
-            >{this.state.recording ? this.renderTimer : null}</RNCamera>
+            >
+            {this.state.recording ? this.renderTimer : null}
             
+           
+            </RNCamera> 
+        
+
         <View style={{ flex : 1, justifyContent: 'flex-end', borderWith: 3, borderColor: 'yellow', bottom: 0}}>
               <View style={{flexDirection: 'row', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
                   <View style={{flex: 1, bottom: 20, right: '180%', position: 'absolute'}}>
@@ -150,7 +231,7 @@ render() {
                   </View>
               </View>
         </View>
-     </View>
+        </ViewShot>
     </View> 
     
     );
@@ -225,6 +306,21 @@ render() {
         borderRadius: 5, 
         height:50, 
         width: 80
-      }
-
+      },
+      facesContainer: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        left: 0,
+        top: 0,
+      },
+      face: {
+        padding: 10,
+        borderWidth: 2,
+        borderRadius: 2,
+        position: 'absolute',
+        borderColor: '#FFD700',
+        justifyContent: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      },
   });
