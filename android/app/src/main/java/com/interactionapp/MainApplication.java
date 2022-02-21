@@ -14,6 +14,7 @@ import java.util.List;
 import io.invertase.firebase.RNFirebasePackage; //<-should be there already
 import io.invertase.firebase.messaging.RNFirebaseMessagingPackage;
 import io.invertase.firebase.notifications.RNFirebaseNotificationsPackage;
+import com.brentvatne.react.ReactVideoPackage;
 //import com.reactnativecommunity.cameraroll.CameraRollPackage;
 
 public class MainApplication extends Application implements ReactApplication {
@@ -34,6 +35,8 @@ public class MainApplication extends Application implements ReactApplication {
           // Packages that cannot be autolinked yet can be added manually here, for example:
           // packages.add(new MyReactNativePackage());
        //   packages.add(new CameraRollPackage());
+         //   packages.add(new MainReactPackage());
+            packages.add( new ReactVideoPackage());
           return packages;
         }
 

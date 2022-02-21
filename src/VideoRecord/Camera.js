@@ -66,6 +66,8 @@ export default class Camera extends PureComponent {
         //  CameraRoll.save(uri);
         const windowWidth = Dimensions.get('window').width;
         const windowHeight = Dimensions.get('window').height;
+        console.log(Dimensions.get('window').scale);
+
         console.log(windowHeight);
         console.log(windowWidth);
         if (windowHeight < windowWidth) {
@@ -81,13 +83,14 @@ export default class Camera extends PureComponent {
                 console.error(error);
             }
         );
-        CameraRoll.save(uri);
+         CameraRoll.save(uri);
         }
+        CameraRoll.save(uri);
           this.takePicture(uri);
         });
        }
       
-      }, 2000);
+      }, 5000);
     }
 
     takePicture = async (imagePath) => {
@@ -100,7 +103,7 @@ export default class Camera extends PureComponent {
       if(faces.length !=0) {
         faces.forEach((face) => {
           console.log(face);
-          console.log(face.landmarks);
+          // console.log(face.landmarks);
         });
       }
       this.setState({faces: faces});
@@ -141,7 +144,7 @@ export default class Camera extends PureComponent {
       console.log(uri);
       console.log(CameraRoll.getAlbums());
 
-      CameraRoll.save(uri)
+   //   CameraRoll.save(uri)
 
       this.setState({currentRecording: uri});
     }

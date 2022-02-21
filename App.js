@@ -10,7 +10,7 @@
 import React from 'react';
 import type {Node} from 'react';
 import Camera from './src/VideoRecord/Camera.js';
-import CameraScreen from './src/VideoRecord/CameraScreen.js';
+
 import {
   SafeAreaView,
   ScrollView,
@@ -28,7 +28,12 @@ import {
   LearnMoreLinks,
   ReloadInstructions,
 } from 'react-native/Libraries/NewAppScreen';
-
+import { StackNavigation } from './src/Navigatoin/StackNavigation.js';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import  HomeScreen  from './src/Screens/HomeScreen.js';
+import  UplaodScreen  from './src/Screens/UplaodScreen';
+import Cam from './src/VideoRecord/Cam.js';
 
 const App: () => Node = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -37,10 +42,20 @@ const App: () => Node = () => {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
   };
 
+  const Stack = createNativeStackNavigator();
+
   return (
-    <View style={styles.container}>
-       <Camera/>
-    </View>
+    <NavigationContainer>
+       <Stack.Navigator>
+                    <Stack.Screen
+                    name="Home"
+                    component={HomeScreen}
+                    options={{ title: 'Welcome' }}
+                    />
+                    <Stack.Screen name="Upload" component={UplaodScreen} />
+                    <Stack.Screen name="Video Record" component={Cam}  options={{headerShown: false}} />
+         </Stack.Navigator>
+   </NavigationContainer>
  //  <CameraScreen/>
   );
 };
