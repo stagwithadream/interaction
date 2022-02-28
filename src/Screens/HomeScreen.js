@@ -19,22 +19,22 @@ class HomeScreen extends PureComponent {
     render() {
         return (
             <View style={{flex: 1, flexDirection: 'column', justifyContent: 'center', marginTop: '30%', marginLeft: '30%'}}>
-                <View style={{flex: 1, width: '50%', height: '80%'}}> 
+                <View style={{flex: 1, width: '50%', height: '80%'}}>
                     <Button
                     onPress={() => this.navigateToCamera("Video Record")}
                     style={{height: '80%', width:30}}
                     title="Record Video"
                     />
                 </View>
-                <View style={{flex: 1,width: '50%'}}> 
+                <View style={{flex: 1,width: '50%'}}>
                     <Button
                     onPress={() => this.navigateToCamera("Upload")}
                     title="Upload Video"
-                    color="#841584"
+                    color="black"
                     accessibilityLabel="Learn more about this purple button"
                     />
                 </View>
-               
+
             </View>
         );
     }
