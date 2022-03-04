@@ -21,11 +21,12 @@ export async function getDataAsync(path){
 
  export async function postDataAsync(path = '', data = {}){
     let url = BASE_URL + path;
+    console.log(url);
     return await fetch(url, {
             method: 'POST',
             headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
+                // Accept: 'application/json',
+                'content-type': 'multipart/form-data'
                
             },
             body: JSON.stringify(data)
