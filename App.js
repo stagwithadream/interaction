@@ -99,10 +99,12 @@ const App: () => Node = () => {
 
   <Tab.Screen name="Home" component={HomeScreen} />
   <Tab.Screen name="Upload" component={UplaodScreen} />
-  <Tab.Screen name="Video Record" component={Cam} options={{
-        tabBarButton: () => null,
-        tabBarVisible: false, // if you don't want to see the tab bar
-      }} />
+   <Tab.Screen name="Video Record" component={Cam} 
+  // options={{
+  //       tabBarButton: () => null,
+  //       tabBarVisible: false, // if you don't want to see the tab bar
+  //     }}
+  />
   <Tab.Screen name="Surveys" component={UplaodScreen} options={{ tabBarBadge: 3 }} />
 </Tab.Navigator>
 </NavigationContainer>
