@@ -6,6 +6,7 @@ import * as ImagePicker from 'react-native-image-picker';
 import Video from 'react-native-video';
 import Orientation from 'react-native-orientation';
 import { getDataAsync, postDataAsync} from '../utils/Api';
+import axios from 'axios';
 
 const screen = Dimensions.get('window');
 
@@ -51,11 +52,13 @@ export default class UplaodScreen extends PureComponent {
         let errorFlag = false;
         let formData = new FormData();
         if (video) {
-            formData.append("video", {
-                name: "name.mp4",
-                uri: video.uri,
-                type: 'video/mp4'
-            });
+            // formData.append("video", {
+            //     name: "name.mp4",
+            //     uri: video.uri,
+            //     type: 'video/mp4'
+            // });
+           // let form_data = new FormData();
+            formData.append('video', video.uri, "name");
         }
         //   formData.append("user_id", userDetails.id);
         var base_url = "https://yourdomain.com/";
@@ -75,13 +78,24 @@ export default class UplaodScreen extends PureComponent {
         //         console.log("err:"+error);
         //         this.setState({ loading: false });
         //     });
-        postDataAsync('posts', formData).then((res) => {
-            this.setState({ loading: false,success: true });
-            console.log(res);
-        }).catch(error => {
-            console.log("err:"+error);
-            this.setState({ loading: false, success: false });
-        });
+        // postDataAsync('posts/', formData).then((res) => {
+        //     this.setState({ loading: false,success: true });
+        //     console.log(res);
+        // }).catch(error => {
+        //     console.log("err:"+error);
+        //     this.setState({ loading: false, success: false });
+        // });
+    
+    
+        let url = 'http://ec2-100-25-152-186.compute-1.amazonaws.com:8000/posts/';
+        axios.post(url, formData, {
+        headers: {
+            'content-type': 'multipart/form-data'
+        }
+        }).then(res => {
+            console.log(res.data);
+            })
+        .catch(err => console.log(err));
 
     }
 

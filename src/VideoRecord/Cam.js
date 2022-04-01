@@ -10,12 +10,10 @@ import FaceDetection, {
   FaceDetectorLandmarkMode,
   FaceContourType,
 } from 'react-native-face-detection';
-import ImageRotate from 'react-native-image-rotate';
-import {Dimensions} from 'react-native';
-import {captureRef} from 'react-native-view-shot';
-
+import { Button, Image } from 'react-native';
 import Orientation from 'react-native-orientation';
 import { PermissionsAndroid, Platform } from 'react-native';
+import Swiper from 'react-native-swiper'
 
 const DESIRED_RATIO = '16:9';
 
@@ -27,10 +25,15 @@ export default class Cam extends PureComponent {
       currentRecording: null,
       showRecording: false,
       cameType: RNCamera.Constants.Type.front,
-      time: 600,
+      time: 10,
       canDetectFaces: false,
       showUplaod: false,
       faces: [],
+      showCamera: false,
+      preTimer: false,
+      iconContainer: false,
+      correct: false,
+      wrong: false
     };
     this.startRecording = this.startRecording.bind(this);
     this.stopRecording = this.stopRecording.bind(this);
@@ -42,10 +45,13 @@ export default class Cam extends PureComponent {
     this.convertTimeString = this.convertTimeString.bind(this);
     this.renderTimer = this.renderTimer.bind(this);
     this.prepareRatio = this.prepareRatio.bind(this);
-
-    //  this.facesDetected = this.facesDetected.bind(this);
+    this.renderPreTimer = this.renderPreTimer.bind(this);
     this.toggle = this.toggle.bind(this);
+    this.showCamera = this.showCamera.bind(this);
     this.viewShot = {};
+    this.startPreRecordingTimer = this.startPreRecordingTimer.bind(this);
+    this.snap = this.snap.bind(this);
+    this.checkFaces = this.checkFaces.bind(this);
   }
 
   async componentDidMount() {
@@ -59,14 +65,12 @@ export default class Cam extends PureComponent {
 
   componentDidUpdate(prevProps){
     if(this.props.route.params != undefined && this.props.route.params.nav) {
-      console.log("inside");
       Orientation.unlockAllOrientations();
       Orientation.lockToLandscape();
     }
     
   }
   flipSide() {
-    console.log("in");
     if (this.state.cameType === RNCamera.Constants.Type.front) {
       this.setState({cameType: RNCamera.Constants.Type.back});
     } else {
@@ -81,26 +85,46 @@ export default class Cam extends PureComponent {
     this.timer = setInterval(() => {
       const time = this.state.time - 1;
       this.setState({time});
+      console.log(this.state.time);
+      // check faces in last 5 seconds
+      if(this.state.time == 5 && this.state.preTimer) {
+        this.snap();
+      }
       if (this.state.time <= 0) {
-        this.stopRecording();
+        if(this.state.preTimer){
+          this.stopTimer();
+          this.setState({preTimer: false, time:3, iconContainer: true}, () => this.startTimer());
+          //start recodring after inital countdown
+        } else if(this.state.correct) {
+          this.stopTimer();
+          this.setState({correct: false, iconContainer: false}, () => {this.startRecording();})
+        }else if(this.state.wrong) {
+          this.stopTimer();
+          this.setState({wrong: false, iconContainer: false, time: 10})
+        }
+        else {
+          // stop recording actual video
+          this.stopRecording();
+        }
+        
       }
     }, 1000);
   };
 
   takePictures = () => {
     this.t2 = setInterval(() => {
-      if (this.viewShot != null) {
-        this.viewShot.capture().then(uri => {
-          console.log('do something with ', uri);
-          // CameraRoll.save(uri);
-
-          this.takePicture(uri);
-        });
-      }
+          this.snap();
     }, 2000);
   };
 
-  
+  snap(){
+    if (this.viewShot != null) {
+      this.viewShot.capture().then(uri => {
+        console.log('do something with ', uri);
+        this.takePicture(uri);
+      });
+    }
+  }
 
   takePicture = async imagePath => {
     const options = {
@@ -108,7 +132,8 @@ export default class Cam extends PureComponent {
       contourMode: FaceDetectorContourMode.ALL,
     };
     const faces = await FaceDetection.processImage(imagePath, options);
-    this.setState({faces: faces});
+    this.setState({faces: faces},() => {this.checkFaces()});
+    console.log(faces);
   };
 
   stopTimer = () => {
@@ -126,14 +151,28 @@ export default class Cam extends PureComponent {
       <View style={{flex: 1, right: '0%', top: '2%'}}>
         <View style={styles.timer}>
           <Text style={styles.timerText}>{this.convertTimeString(time)}</Text>
-          <Text style={styles.timerText,{fontSize: 15, color: 'white', paddingTop: 7}}>faces:{this.state.faces.length}</Text>
+          <Text style={{fontSize: 15, color: 'white', paddingTop: 7}}>faces:{this.state.faces.length}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  renderPreTimer() {
+    console.log('inside timer')
+    const time = this.state.time;
+    return (
+      <View style={{flex: 1, right: '0%', top: '40%'}}>
+        <View style={styles.preTimer}>
+          <Text>
+            <Text style={styles.preTimerText}>Start Recording in </Text><Text style={[styles.preTimerText,{fontWeight: 'bold', color: 'red'}]}>  {moment().startOf('day').seconds(time).format('ss')}</Text>
+          </Text>
         </View>
       </View>
     );
   }
 
   async startRecording() {
-    this.setState({recording: true, canDetectFaces: true});
+    this.setState({recording: true, canDetectFaces: true, time: 300});
     this.takePictures();
     this.startTimer();
     // default to mp4 for android as codec is not set
@@ -144,6 +183,20 @@ export default class Cam extends PureComponent {
     });
 
     this.setState({currentRecording: uri});
+  }
+ //check faces initially
+  checkFaces() {
+      if(this.state.faces.length == 2) {
+        this.setState({correct: true});
+      }else {
+        this.setState({wrong: true});
+      }
+  }
+
+  async startPreRecordingTimer() {
+    // show countdown over camera
+    this.setState({preTimer: true});
+    this.startTimer();
   }
 
   stopRecording() {
@@ -178,18 +231,62 @@ export default class Cam extends PureComponent {
     }
   };
 
+  showCamera() {
+    this.setState({showCamera: true})
+  }
+
+  getIcon() {
+    return (
+      <View style={{flex: 1, right: '0%', top: '30%'}}>
+        <View>
+          {this.state.correct ? <Icon name="refresh" color="white" size={80} /> : null}
+          {this.state.wrong ? <Icon name="refresh" color="white" size={80} /> : null}
+        </View>
+      </View>
+    );
+  }
+
 
   render() {
     const {canDetectFaces} = this.state;
     return (
       <View style={{flex: 6, height: '100%'}}>
-        <ViewShot
-          style={styles.container}
-          ref="viewShot"
-          options={{format: 'jpg', quality: 0.9}}
-          ref={ref => {
-            this.viewShot = ref;
-          }}>
+        {!this.state.showCamera ? 
+          <Swiper style={styles.wrapper} showsButtons loop={false}>
+            <View testID="Hello" style={styles.slide1}>
+              <Text style={styles.text}>Please make sure you and your infant each have a chair to sit in</Text>
+              <Image
+                style={styles.tinyLogo}
+                source={require('../images/chair.jpg')}
+              />
+            </View>
+            <View testID="Beautiful" style={styles.slide2}>
+              <Text style={styles.text}>Grab an object you can use to prop up your phone</Text>
+              <Image
+                style={styles.propImage}
+                source={require('../images/prop.jpg')}
+              />
+            </View>
+            <View testID="Simple" style={styles.slide3}>
+              <Text style={styles.text}>Make sure to turn on a light or face a window so that your faces are visible</Text>
+              <Image
+                style={styles.tinyLogo}
+                source={require('../images/bulb.jpg')}
+              />
+            </View>
+            <View testID="Simple" style={styles.slide3}>
+              <Text style={styles.text}>Get seated and ready to record</Text>
+              <Button color="#ADD8E6" title="Record" onPress={this.showCamera}/>  
+            </View>
+          </Swiper> : 
+          <View style={{flex: 6, height: '100%'}}>
+           <ViewShot
+            style={styles.container}
+            ref="viewShot"
+            options={{format: 'jpg', quality: 0.9}}
+            ref={ref => {
+              this.viewShot = ref;
+            }}>
           <RNCamera
             ref={ref => {
               this.camera = ref;
@@ -214,43 +311,55 @@ export default class Cam extends PureComponent {
               buttonPositive: 'Ok',
               buttonNegative: 'Cancel',
             }}>
-            {this.state.recording ? this.renderTimer : null}
+               {this.state.recording ? this.renderTimer() : null}
+               {this.state.preTimer ? this.renderPreTimer() : null}
+               {this.state.iconContainer && this.state.correct ? 
+                <View style={{flex: 1, right: '0%', top: '20%'}}>
+                  <Icon name="check-square-o" color="green" size={150} /> 
+                </View>:
+                 null}
+               {this.state.iconContainer && this.state.wrong ? 
+                <View style={{flex: 1, right: '0%', top: '30%'}}>
+                  <Icon name="close" color="red" size={150} /> 
+                </View> : 
+                null}
           </RNCamera>
-        </ViewShot>
-
-        <View
-          style={{
-            padding: 20,
-            bottom: 10,
-            right: '0%',
-            position: 'absolute',
-          }}>
-          <TouchableOpacity
-            style={{
-              opacity: 0.8,
-              color: 'white',
-            }}
-            onPress={this.flipSide}>
-            <Icon name="refresh" color="white" size={30} />
-          </TouchableOpacity>
-        </View>
-        <View style={{top: '38%', right: '0.9%', position: 'absolute'}}>
-          <View style={styles.iconContainer}>
-            {!this.state.recording ? (
+           </ViewShot>
+            <View
+              style={{
+                padding: 20,
+                bottom: 10,
+                right: '0%',
+                position: 'absolute',
+              }}>
               <TouchableOpacity
-                style={styles.recordingOn}
-                onPress={() => {
-                  this.startRecording();
-                }}></TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                style={styles.recordingOff}
-                onPress={() => {
-                  this.stopRecording();
-                }}></TouchableOpacity>
-            )}
-          </View>
-        </View>
+                style={{
+                  opacity: 0.8,
+                  color: 'white',
+                }}
+                onPress={this.flipSide}>
+                <Icon name="refresh" color="white" size={30} />
+              </TouchableOpacity>
+            </View>
+            <View style={{top: '38%', right: '0.9%', position: 'absolute'}}>
+              <View style={styles.iconContainer}>
+                {!this.state.recording ? (
+                  <TouchableOpacity
+                    style={styles.recordingOn}
+                    onPress={() => {
+                      this.startPreRecordingTimer();
+                    }}></TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    style={styles.recordingOff}
+                    onPress={() => {
+                      this.stopRecording();
+                    }}></TouchableOpacity>
+                )}
+              </View>
+            </View> 
+          </View>  }
+         
       </View>
     );
   }
@@ -312,6 +421,13 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     margin: 20,
   },
+  preTimerText: {
+    fontSize: 23,
+    color: 'white',
+    opacity: 1.0,
+    fontWeight: 'bold',
+    
+  },
   timerText: {
     fontSize: 23,
     color: 'white',
@@ -319,6 +435,16 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     paddingLeft: 13,
     paddingTop: 8,
+  },
+  preTimer: {
+    backgroundColor: '#5e5a5a',
+    opacity: 0.5,
+    borderRadius: 5,
+    height: 70,
+    width: 500,
+    paddingLeft: 100,
+    paddingRight: 50,
+    paddingTop: 20,
   },
   timer: {
     backgroundColor: '#5e5a5a',
@@ -344,5 +470,39 @@ const styles = StyleSheet.create({
   },
   uploadIcon: {
     // transform: rotate(45)
+  },
+  wrapper: {},
+  slide1: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#9DD6EB'
+  },
+  slide2: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#97CAE5'
+  },
+  slide3: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#92BBD9'
+  },
+  text: {
+    color: '#fff',
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    padding: 20
+  },
+  tinyLogo: {
+    width: 50,
+    height: 50,
+  },
+  propImage: {
+    width: 150,
+    height: 70
   }
 });
