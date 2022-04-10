@@ -5,7 +5,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import * as ImagePicker from 'react-native-image-picker';
 import Video from 'react-native-video';
 import Orientation from 'react-native-orientation';
-import { getDataAsync} from '../utils/Api';
+import { getDataAsync, postDataAsync} from '../utils/Api';
+import axios from 'axios';
 
 const screen = Dimensions.get('window');
 
@@ -16,12 +17,16 @@ export default class UplaodScreen extends PureComponent {
             loading: false,         // manage loader   
             video: this.props.route.params != undefined ?  this.props.route.params.video : "",              // store video
             paused: false,
-            showModal: false
+            showModal: false,
+            showConfirm: false,
+            success: false
         }
         this.toggleVideoPlay = this.toggleVideoPlay.bind(this);
         this.cancelUpload = this.cancelUpload.bind(this);
         this.createNewFeed = this.createNewFeed.bind(this);
         this.confirmModal = this.confirmModal.bind(this);
+        this.closeModal = this.closeModal.bind(this);
+        this.getModalContent = this.getModalContent.bind(this);
     }
  
     async componentDidMount() {
@@ -42,16 +47,18 @@ export default class UplaodScreen extends PureComponent {
      * send feed details to server
      */
     createNewFeed = async () => {
-        this.setState({ loading: true })
+        this.setState({ loading: true, showConfirm: false })
         const {  video } = this.state;
         let errorFlag = false;
         let formData = new FormData();
         if (video) {
-            formData.append("videoFile", {
-                name: "name.mp4",
-                uri: video.uri,
-                type: 'video/mp4'
-            });
+            // formData.append("video", {
+            //     name: "name.mp4",
+            //     uri: video.uri,
+            //     type: 'video/mp4'
+            // });
+           // let form_data = new FormData();
+            formData.append('video', video.uri, "name");
         }
         //   formData.append("user_id", userDetails.id);
         var base_url = "https://yourdomain.com/";
@@ -62,15 +69,33 @@ export default class UplaodScreen extends PureComponent {
         //     // },
         //     // body: formData
         // })
-        getDataAsync('hospital/hello/')
-            .then(async (res) => {
-                this.setState({ loading: false });
-                console.log(res)
+        // getDataAsync('hospital/hello/')
+        //     .then(async (res) => {
+        //         this.setState({ loading: false });
+        //         console.log(res)
+        //     })
+        //     .catch(error => {
+        //         console.log("err:"+error);
+        //         this.setState({ loading: false });
+        //     });
+        // postDataAsync('posts/', formData).then((res) => {
+        //     this.setState({ loading: false,success: true });
+        //     console.log(res);
+        // }).catch(error => {
+        //     console.log("err:"+error);
+        //     this.setState({ loading: false, success: false });
+        // });
+    
+    
+        let url = 'http://ec2-100-25-152-186.compute-1.amazonaws.com:8000/posts/';
+        axios.post(url, formData, {
+        headers: {
+            'content-type': 'multipart/form-data'
+        }
+        }).then(res => {
+            console.log(res.data);
             })
-            .catch(error => {
-                console.log("err:"+error);
-                this.setState({ loading: false });
-            });
+        .catch(err => console.log(err));
 
     }
 
@@ -86,10 +111,37 @@ export default class UplaodScreen extends PureComponent {
     }
 
     confirmModal(){
-        this.setState({showModal: true});
+        this.setState({showModal: true, showConfirm: true});
     }
-    render() {
-       
+    closeModal() {
+        this.setState({showModal: false,showConfirm: false});
+    }
+    getModalContent() {
+        if(this.state.loading) {
+            return (
+                <View style={styles.loader}>
+                    <ActivityIndicator  size="large" color="black" /> 
+                </View> 
+            );
+        } else if (this.state.success) {
+            return (
+                <View>
+                     <Icon style={styles.modalIcon} name="md-checkmark-circle" size={60} color="green" />
+                     <Text style={styles.text}>Successfully updated</Text>
+                </View> 
+            );
+        } else {
+            return (
+                <View>
+                    <Icon style={styles.modalIcon} name="alert-circle" size={60} color="red" />
+                     <Text style={styles.text}>Error Uplaoding! Please try again</Text>
+                </View> 
+            );
+        }
+    }
+     render() {
+       const text = this.state.loading ? "Loading..." : (this.state.success ? "Success!!" : "Failure!"); 
+       const modalHeaderText = this.state.showModal && this.state.showConfirm ? "Uplaod Confirmation!" : text;
         return (
             <View style={styles.SplashLayout}>
                 {this.state.video === "" ? 
@@ -128,16 +180,32 @@ export default class UplaodScreen extends PureComponent {
                             >
                             <View style={styles.centeredView}>
                                 <View style={styles.modalView}>
-                                    <Text>Hello World!</Text>
+                                    <View>
+                                      <Text style={styles.modalHeader}>{modalHeaderText}</Text>
+                                    </View>
+                                    {this.state.showConfirm ?
+                                    <View style={{flex:1, flexDirection: 'column', justifyContent: 'space-between'}}>
+                                        <View style={{flex: 2}}>
+                                            <Text>Confirm to upload Video</Text>
+                                        </View>
+                                        <View style={{flex:1, flexDirection: 'row', justifyContent: 'space-between'}}>
+                                            <View>
+                                                <Button color="green" title="Confirm" onPress={this.createNewFeed}/>  
+                                            </View>
+                                           <View>
+                                                <Button title="Cancel" color="red" style={{flex: 2}} onPress={this.closeModal}/> 
+                                           </View>
+                                           
+                                        </View>
+                                    </View> :
+                                        this.getModalContent()
+                                         }
                                 </View>
+                                
                             </View>
+                           
                         </Modal>
-                        {/* <View style={styles.loader}>
-                            <Text style={{color: 'white', zIndex: 2}}>
-                                Uplaoding....
-                            </Text>
-                            <ActivityIndicator  size="large" color="white" /> 
-                        </View> */}
+                       
                         <TouchableOpacity
                             style={{
                             opacity: 0.8,
@@ -152,7 +220,7 @@ export default class UplaodScreen extends PureComponent {
                         </TouchableOpacity> 
                         <View style={styles.buttonsContainer}>
                             <View style={{flex: 2, paddingRight: 10}}>
-                                <Button title="Upload Video to Box" onPress={this.createNewFeed}/>
+                                <Button title="Upload Video to Box" onPress={this.confirmModal}/>
                             </View>
                             <View style={{flex: 2}}>
                                 <Button title="Cancel" color="red" style={{flex: 2}} onPress={this.cancelUpload}/>    
@@ -212,22 +280,27 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between'
     },
     loader: {
-        position: 'absolute',
-        left: screen.width/2-10,
-        top: screen.height/3+10,
-        color: 'white'
+        padding: 30
+    },
+    modalIcon: {
+        marginLeft: '34%'
     },
     centeredView: {
-        flex: 1,
-        justifyContent: "center",
+         flex: 1,
+         justifyContent: "center",
         alignItems: "center",
-        marginTop: 22
+         marginTop: 22,
       },
+      modalHeader: {
+        fontWeight: 'bold',
+        fontSize: 16,
+        padding: 10
+    },
       modalView: {
-        margin: 20,
+        // margin: 20,
         backgroundColor: "white",
         borderRadius: 20,
-        padding: 35,
+        // padding: 35,
         alignItems: "center",
         shadowColor: "#000",
         shadowOffset: {
@@ -236,7 +309,9 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 4,
-        elevation: 5
+        elevation: 5,
+        height: screen.width/2,
+        width:'60%',
       },
     
 });

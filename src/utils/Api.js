@@ -19,21 +19,22 @@ export async function getDataAsync(path){
         })
 }
 
- export async function postDataAsync(path = '', data = {}){
+ export async function postDataAsync(path = '', data){
     let url = BASE_URL + path;
+    console.log(url);
     return await fetch(url, {
             method: 'POST',
             headers: {
-                Accept: 'application/json',
-                'Content-Type': 'application/json'
+                Accept: 'application/json, text/plain, */*',
+        'content-type': 'multipart/form-data',
+                // 'content-type': 'multipart/form-data'
                
             },
-            body: JSON.stringify(data)
+            body: data
         }).then(response => {
             
             return response;
         });
-        
-    
+
 
 }
