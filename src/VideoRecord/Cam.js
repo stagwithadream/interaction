@@ -10,10 +10,10 @@ import FaceDetection, {
   FaceDetectorLandmarkMode,
   FaceContourType,
 } from 'react-native-face-detection';
-import { Button, Image } from 'react-native';
+import {Button, Image} from 'react-native';
 import Orientation from 'react-native-orientation';
-import { PermissionsAndroid, Platform } from 'react-native';
-import Swiper from 'react-native-swiper'
+import {PermissionsAndroid, Platform} from 'react-native';
+import Swiper from 'react-native-swiper';
 
 const DESIRED_RATIO = '16:9';
 
@@ -33,7 +33,7 @@ export default class Cam extends PureComponent {
       preTimer: false,
       iconContainer: false,
       correct: false,
-      wrong: false
+      wrong: false,
     };
     this.startRecording = this.startRecording.bind(this);
     this.stopRecording = this.stopRecording.bind(this);
@@ -55,7 +55,6 @@ export default class Cam extends PureComponent {
   }
 
   async componentDidMount() {
-   
     Orientation.lockToLandscape();
   }
 
@@ -63,12 +62,11 @@ export default class Cam extends PureComponent {
     Orientation.unlockAllOrientations();
   }
 
-  componentDidUpdate(prevProps){
-    if(this.props.route.params != undefined && this.props.route.params.nav) {
+  componentDidUpdate(prevProps) {
+    if (this.props.route.params != undefined && this.props.route.params.nav) {
       Orientation.unlockAllOrientations();
       Orientation.lockToLandscape();
     }
-    
   }
   flipSide() {
     if (this.state.cameType === RNCamera.Constants.Type.front) {
@@ -87,37 +85,39 @@ export default class Cam extends PureComponent {
       this.setState({time});
       console.log(this.state.time);
       // check faces in last 5 seconds
-      if(this.state.time == 5 && this.state.preTimer) {
+      if (this.state.time == 5 && this.state.preTimer) {
         this.snap();
       }
       if (this.state.time <= 0) {
-        if(this.state.preTimer){
+        if (this.state.preTimer) {
           this.stopTimer();
-          this.setState({preTimer: false, time:3, iconContainer: true}, () => this.startTimer());
+          this.setState({preTimer: false, time: 3, iconContainer: true}, () =>
+            this.startTimer(),
+          );
           //start recodring after inital countdown
-        } else if(this.state.correct) {
+        } else if (this.state.correct) {
           this.stopTimer();
-          this.setState({correct: false, iconContainer: false}, () => {this.startRecording();})
-        }else if(this.state.wrong) {
+          this.setState({correct: false, iconContainer: false}, () => {
+            this.startRecording();
+          });
+        } else if (this.state.wrong) {
           this.stopTimer();
-          this.setState({wrong: false, iconContainer: false, time: 10})
-        }
-        else {
+          this.setState({wrong: false, iconContainer: false, time: 10});
+        } else {
           // stop recording actual video
           this.stopRecording();
         }
-        
       }
     }, 1000);
   };
 
   takePictures = () => {
     this.t2 = setInterval(() => {
-          this.snap();
+      this.snap();
     }, 2000);
   };
 
-  snap(){
+  snap() {
     if (this.viewShot != null) {
       this.viewShot.capture().then(uri => {
         console.log('do something with ', uri);
@@ -132,7 +132,9 @@ export default class Cam extends PureComponent {
       contourMode: FaceDetectorContourMode.ALL,
     };
     const faces = await FaceDetection.processImage(imagePath, options);
-    this.setState({faces: faces},() => {this.checkFaces()});
+    this.setState({faces: faces}, () => {
+      this.checkFaces();
+    });
     console.log(faces);
   };
 
@@ -151,20 +153,27 @@ export default class Cam extends PureComponent {
       <View style={{flex: 1, right: '0%', top: '2%'}}>
         <View style={styles.timer}>
           <Text style={styles.timerText}>{this.convertTimeString(time)}</Text>
-          <Text style={{fontSize: 15, color: 'white', paddingTop: 7}}>faces:{this.state.faces.length}</Text>
+          <Text style={{fontSize: 15, color: 'white', paddingTop: 7}}>
+            faces:{this.state.faces.length}
+          </Text>
         </View>
       </View>
     );
   }
 
   renderPreTimer() {
-    console.log('inside timer')
+    console.log('inside timer');
     const time = this.state.time;
     return (
       <View style={{flex: 1, right: '0%', top: '40%'}}>
         <View style={styles.preTimer}>
           <Text>
-            <Text style={styles.preTimerText}>Start Recording in </Text><Text style={[styles.preTimerText,{fontWeight: 'bold', color: 'red'}]}>  {moment().startOf('day').seconds(time).format('ss')}</Text>
+            <Text style={styles.preTimerText}>Start Recording in </Text>
+            <Text
+              style={[styles.preTimerText, {fontWeight: 'bold', color: 'red'}]}>
+              {' '}
+              {moment().startOf('day').seconds(time).format('ss')}
+            </Text>
           </Text>
         </View>
       </View>
@@ -177,20 +186,23 @@ export default class Cam extends PureComponent {
     this.startTimer();
     // default to mp4 for android as codec is not set
     const {uri, codec = 'mp4'} = await this.camera.recordAsync();
-    CameraRoll.save(uri).then((e) => {
+    CameraRoll.save(uri).then(e => {
       let arr = e.split(':')[1].split('/');
-      this.props.navigation.navigate("Upload", {video: e, currentRecording: true});
+      this.props.navigation.navigate('Upload', {
+        video: e,
+        currentRecording: true,
+      });
     });
 
     this.setState({currentRecording: uri});
   }
- //check faces initially
+  //check faces initially
   checkFaces() {
-      if(this.state.faces.length == 2) {
-        this.setState({correct: true});
-      }else {
-        this.setState({wrong: true});
-      }
+    if (this.state.faces.length == 2) {
+      this.setState({correct: true});
+    } else {
+      this.setState({wrong: true});
+    }
   }
 
   async startPreRecordingTimer() {
@@ -202,13 +214,13 @@ export default class Cam extends PureComponent {
   stopRecording() {
     this.camera.stopRecording();
     this.stopTimer();
-     this.setState({
+    this.setState({
       recording: false,
       showRecording: true,
       time: 600,
       canDetectFaces: false,
       showUplaod: true,
-     });
+    });
   }
 
   renderFaces = () => (
@@ -232,99 +244,150 @@ export default class Cam extends PureComponent {
   };
 
   showCamera() {
-    this.setState({showCamera: true})
+    this.setState({showCamera: true});
   }
 
   getIcon() {
     return (
       <View style={{flex: 1, right: '0%', top: '30%'}}>
         <View>
-          {this.state.correct ? <Icon name="refresh" color="white" size={80} /> : null}
-          {this.state.wrong ? <Icon name="refresh" color="white" size={80} /> : null}
+          {this.state.correct ? (
+            <Icon name="refresh" color="white" size={80} />
+          ) : null}
+          {this.state.wrong ? (
+            <Icon name="refresh" color="white" size={80} />
+          ) : null}
         </View>
       </View>
     );
   }
 
-
   render() {
     const {canDetectFaces} = this.state;
     return (
       <View style={{flex: 6, height: '100%'}}>
-        {!this.state.showCamera ? 
+        {!this.state.showCamera ? (
           <Swiper style={styles.wrapper} showsButtons loop={false}>
             <View testID="Hello" style={styles.slide1}>
-              <Text style={styles.text}>Please make sure you and your infant each have a chair to sit in</Text>
+              <Text style={styles.text}>
+                Please make sure you and your infant each have a chair to sit in
+              </Text>
               <Image
                 style={styles.tinyLogo}
                 source={require('../images/chair.jpg')}
               />
             </View>
             <View testID="Beautiful" style={styles.slide2}>
-              <Text style={styles.text}>Grab an object you can use to prop up your phone</Text>
+              <Text style={styles.text}>
+                Grab an object you can use to prop up your phone
+              </Text>
               <Image
                 style={styles.propImage}
                 source={require('../images/prop.jpg')}
               />
             </View>
             <View testID="Simple" style={styles.slide3}>
-              <Text style={styles.text}>Make sure to turn on a light or face a window so that your faces are visible</Text>
+              <Text style={styles.text}>
+                Make sure to turn on a light or face a window so that your faces
+                are visible
+              </Text>
               <Image
                 style={styles.tinyLogo}
                 source={require('../images/bulb.jpg')}
               />
             </View>
             <View testID="Simple" style={styles.slide3}>
-              <Text style={styles.text}>Get seated and ready to record</Text>
-              <Button color="#ADD8E6" title="Record" onPress={this.showCamera}/>  
+              <Text style={styles.text}>
+                Set down your phone to record. On the next screen, you will be
+                asked to check that your and your infants seats are in view, or
+                if your phone must be adjusted
+              </Text>
             </View>
-          </Swiper> : 
-          <View style={{flex: 6, height: '100%'}}>
-           <ViewShot
-            style={styles.container}
-            ref="viewShot"
-            options={{format: 'jpg', quality: 0.9}}
-            ref={ref => {
-              this.viewShot = ref;
-            }}>
-          <RNCamera
-            ref={ref => {
-              this.camera = ref;
-            }}
-            onCameraReady={this.prepareRatio}
-            style={styles.preview}
-            // You can only get the supported ratios when the camera is mounted
+            <View testID="Simple" style={styles.slide3}>
+              <Text style={styles.text}>
+                Once you press record, we’ll: {'\n'}1. give you 10 seconds to
+                find your seats {'\n'}2. check that we can see both of your
+                faces {'\n'}3. turn the screen black, so we don’t distract you!
+                {'\n'}4. record for 5 minutes {'\n'}5. make a beeping noise to
+                let you know it’s done
+              </Text>
+            </View>
 
-            //orientation="landscapeLeft"
-            type={this.state.cameType}
-            flashMode={RNCamera.Constants.FlashMode.on}
-            defaultVideoQuality={RNCamera.Constants.VideoQuality['480p']}
-            androidCameraPermissionOptions={{
-              title: 'Permission to use camera',
-              message: 'We need your permission to use your camera',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}
-            androidRecordAudioPermissionOptions={{
-              title: 'Permission to use audio recording',
-              message: 'We need your permission to use your audio',
-              buttonPositive: 'Ok',
-              buttonNegative: 'Cancel',
-            }}>
-               {this.state.recording ? this.renderTimer() : null}
-               {this.state.preTimer ? this.renderPreTimer() : null}
-               {this.state.iconContainer && this.state.correct ? 
-                <View style={{flex: 1, right: '0%', top: '20%'}}>
-                  <Icon name="check-square-o" color="green" size={150} /> 
-                </View>:
-                 null}
-               {this.state.iconContainer && this.state.wrong ? 
-                <View style={{flex: 1, right: '0%', top: '30%'}}>
-                  <Icon name="close" color="red" size={150} /> 
-                </View> : 
-                null}
-          </RNCamera>
-           </ViewShot>
+            <View testID="Simple" style={styles.slide3}>
+              <Text style={styles.text}>
+                You can touch the screen at any time and press the record button
+                again to stop the recording.
+              </Text>
+            </View>
+
+            <View testID="Simple" style={styles.slide3}>
+              <Text style={styles.text}>Get seated and ready to record</Text>
+              <Button
+                color="#ADD8E6"
+                title="Record"
+                onPress={this.showCamera}
+              />
+            </View>
+          </Swiper>
+        ) : (
+          <View style={{flex: 6, height: '100%'}}>
+            <ViewShot
+              style={styles.container}
+              ref="viewShot"
+              options={{format: 'jpg', quality: 0.9}}
+              ref={ref => {
+                this.viewShot = ref;
+              }}>
+              <RNCamera
+                ref={ref => {
+                  this.camera = ref;
+                }}
+                onCameraReady={this.prepareRatio}
+                style={styles.preview}
+                // You can only get the supported ratios when the camera is mounted
+
+                //orientation="landscapeLeft"
+                type={this.state.cameType}
+                flashMode={RNCamera.Constants.FlashMode.on}
+                defaultVideoQuality={RNCamera.Constants.VideoQuality['480p']}
+                androidCameraPermissionOptions={{
+                  title: 'Permission to use camera',
+                  message: 'We need your permission to use your camera',
+                  buttonPositive: 'Ok',
+                  buttonNegative: 'Cancel',
+                }}
+                androidRecordAudioPermissionOptions={{
+                  title: 'Permission to use audio recording',
+                  message: 'We need your permission to use your audio',
+                  buttonPositive: 'Ok',
+                  buttonNegative: 'Cancel',
+                }}>
+                {this.state.recording ? this.renderTimer() : null}
+                {this.state.preTimer ? this.renderPreTimer() : null}
+                {!this.state.recording && !this.state.preTimer ? (
+                  <View style={{flex: 1, right: '0%', top: '40%'}}>
+                    <View style={styles.preTimer}>
+                      <Text>
+                        <Text style={styles.preRecText}>
+                          Once both seats are in view, press the record button
+                          below and sit with your infant.
+                        </Text>
+                      </Text>
+                    </View>
+                  </View>
+                ) : null}
+                {this.state.iconContainer && this.state.correct ? (
+                  <View style={{flex: 1, right: '0%', top: '20%'}}>
+                    <Icon name="check-square-o" color="green" size={150} />
+                  </View>
+                ) : null}
+                {this.state.iconContainer && this.state.wrong ? (
+                  <View style={{flex: 1, right: '0%', top: '30%'}}>
+                    <Icon name="close" color="red" size={150} />
+                  </View>
+                ) : null}
+              </RNCamera>
+            </ViewShot>
             <View
               style={{
                 padding: 20,
@@ -357,9 +420,9 @@ export default class Cam extends PureComponent {
                     }}></TouchableOpacity>
                 )}
               </View>
-            </View> 
-          </View>  }
-         
+            </View>
+          </View>
+        )}
       </View>
     );
   }
@@ -426,7 +489,12 @@ const styles = StyleSheet.create({
     color: 'white',
     opacity: 1.0,
     fontWeight: 'bold',
-    
+  },
+  preRecText: {
+    fontSize: 18,
+    color: 'white',
+    opacity: 1.0,
+    fontWeight: 'bold',
   },
   timerText: {
     fontSize: 23,
@@ -476,26 +544,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#9DD6EB'
+    backgroundColor: '#9DD6EB',
   },
   slide2: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#97CAE5'
+    backgroundColor: '#97CAE5',
   },
   slide3: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#92BBD9'
+    backgroundColor: '#92BBD9',
   },
   text: {
     color: '#fff',
     fontSize: 30,
     fontWeight: 'bold',
     textAlign: 'center',
-    padding: 20
+    padding: 20,
   },
   tinyLogo: {
     width: 50,
@@ -503,6 +571,6 @@ const styles = StyleSheet.create({
   },
   propImage: {
     width: 150,
-    height: 70
-  }
+    height: 70,
+  },
 });
