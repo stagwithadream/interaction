@@ -220,7 +220,7 @@ export default class UplaodScreen extends PureComponent {
                         </TouchableOpacity> 
                         <View style={styles.buttonsContainer}>
                             <View style={{flex: 2, paddingRight: 10}}>
-                                <Button title="Upload Video to Box" onPress={this.confirmModal}/>
+                                <Button title="Upload Video" onPress={this.confirmModal}/>
                             </View>
                             <View style={{flex: 2}}>
                                 <Button title="Cancel" color="red" style={{flex: 2}} onPress={this.cancelUpload}/>    

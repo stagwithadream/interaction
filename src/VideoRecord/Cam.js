@@ -168,7 +168,7 @@ export default class Cam extends PureComponent {
       <View style={{flex: 1, right: '0%', top: '40%'}}>
         <View style={styles.preTimer}>
           <Text>
-            <Text style={styles.preTimerText}>Start Recording in </Text>
+            <Text style={styles.preTimerText}>Starting Recording in </Text>
             <Text
               style={[styles.preTimerText, {fontWeight: 'bold', color: 'red'}]}>
               {' '}
@@ -206,9 +206,12 @@ export default class Cam extends PureComponent {
   }
 
   async startPreRecordingTimer() {
-    // show countdown over camera
-    this.setState({preTimer: true});
-    this.startTimer();
+    if(!this.state.preTimer) {
+       // show countdown over camera
+      this.setState({preTimer: true, time:10});
+      this.startTimer();
+    }
+   
   }
 
   stopRecording() {
@@ -217,9 +220,12 @@ export default class Cam extends PureComponent {
     this.setState({
       recording: false,
       showRecording: true,
-      time: 600,
+      time: 10,
       canDetectFaces: false,
       showUplaod: true,
+      iconContainer: false,
+      correct: false,
+      wrong: false
     });
   }
 
@@ -364,9 +370,9 @@ export default class Cam extends PureComponent {
                 }}>
                 {this.state.recording ? this.renderTimer() : null}
                 {this.state.preTimer ? this.renderPreTimer() : null}
-                {!this.state.recording && !this.state.preTimer ? (
+                {!this.state.recording && !this.state.preTimer && !this.state.iconContainer ? (
                   <View style={{flex: 1, right: '0%', top: '40%'}}>
-                    <View style={styles.preTimer}>
+                    <View style={[styles.preTimer, , {height: 100}]}>
                       <Text>
                         <Text style={styles.preRecText}>
                           Once both seats are in view, press the record button
@@ -382,8 +388,9 @@ export default class Cam extends PureComponent {
                   </View>
                 ) : null}
                 {this.state.iconContainer && this.state.wrong ? (
-                  <View style={{flex: 1, right: '0%', top: '30%'}}>
-                    <Icon name="close" color="red" size={150} />
+                  <View style={{flex: 1, right: '0%', top: '20%'}}>
+                    <Icon name="close" color="red" size={150} style={{ left: '10%'}}/>
+                    <Text style={styles.preRecText}>Adjust positions and click record</Text>
                   </View>
                 ) : null}
               </RNCamera>

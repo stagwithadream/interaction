@@ -99,7 +99,7 @@ const App: () => Node = () => {
 
   <Tab.Screen name="Home" component={HomeScreen} />
   <Tab.Screen name="Upload" component={UplaodScreen} />
-   <Tab.Screen name="Video Record" component={Cam} 
+   <Tab.Screen name="Video Record" component={Cam}  options={{headerShown: false}}
   // options={{
   //       tabBarButton: () => null,
   //       tabBarVisible: false, // if you don't want to see the tab bar
