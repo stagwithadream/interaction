@@ -17,7 +17,36 @@ import Orientation from 'react-native-orientation';
 import {getDataAsync, postDataAsync} from '../utils/Api';
 import axios from 'axios';
 
+// presigned url code
+import S3 from 'aws-sdk/clients/s3';
+import {Credentials} from 'aws-sdk';
+
+import uuid from 'react-native-uuid';
+
 const screen = Dimensions.get('window');
+
+export const getBlob = async fileUri => {
+  const resp = await fetch(fileUri);
+  const imageBody = await resp.blob();
+  return imageBody;
+};
+
+export const uploadImage = async (uploadUrl, data) => {
+  const imageBody = await getBlob(data);
+  console.log(imageBody);
+  return fetch(uploadUrl, {
+    method: 'PUT',
+    body: imageBody,
+  });
+};
+const durl = 'http://18.209.179.4:8000/hospital/get_url/';
+export const requestUpload = async () => {
+  const data = {userName: 'Sairam', fileID: uuid.v4()};
+  return fetch(durl, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+};
 
 export default class UplaodScreen extends PureComponent {
   constructor(props) {
@@ -51,9 +80,8 @@ export default class UplaodScreen extends PureComponent {
    */
   selectVideo = async () => {
     ImagePicker.launchImageLibrary(
-      {mediaType: 'image', includeBase64: true},
+      {mediaType: 'video', includeBase64: true},
       response => {
-        console.log(response);
         this.setState({video: response.assets[0]});
       },
     );
@@ -61,90 +89,18 @@ export default class UplaodScreen extends PureComponent {
   /**
    * send feed details to server
    */
+
   createNewFeed = async () => {
     this.setState({loading: true, showConfirm: false});
     const {video} = this.state;
     let errorFlag = false;
-    let form_data = new FormData();
-    if (video) {
-      // formData.append("video", {
-      //     name: "name.mp4",
-      //     uri: video.uri,
-      //     type: 'video/mp4'
-      // });
-      // let form_data = new FormData();
-      // form_data.append("image", this.state.image, this.state.image.name);
-      form_data.append('title', 'ram');
-      form_data.append('Content', 'Hello world');
-      form_data.append('image', this.state.video, this.state.video.name);
-      // formData.append('image', {
-      //   uri: this.state.video.uri,
-      //   name: this.state.video.name,
-      //   type: this.state.video.type,
-      // });
 
-      console.log(form_data);
-    }
-    //   formData.append("user_id", userDetails.id);
-    // var base_url = 'https://yourdomain.com/';
-    // fetch(base_url + 'hospital/hello/', {
-    //     method: 'GET',
-    //     // headers: {
-    //     //     'Content-Type': 'multipart/form-data',
-    //     // },
-    //     // body: formData
-    // })
-    // getDataAsync('hospital/hello/')
-    //     .then(async (res) => {
-    //         this.setState({ loading: false });
-    //         console.log(res)
-    //     })
-    //     .catch(error => {
-    //         console.log("err:"+error);
-    //         this.setState({ loading: false });
-    //     });
-    // postDataAsync('posts/', formData).then((res) => {
-    //     this.setState({ loading: false,success: true });
-    //     console.log(res);
-    // }).catch(error => {
-    //     console.log("err:"+error);
-    //     this.setState({ loading: false, success: false });
-    // });
-
-    let url =
-      'http://ec2-18-209-179-4.compute-1.amazonaws.com:8000/hospital/posts/';
-    // axios
-    //   .post(url, form_data, {
-    //     headers: {
-    //       'content-type': 'multipart/form-data',
-    //
-    //     },
-    //   })
-    //   .then(res => {
-    //     console.log(res.data);
-    //   })
-    //   .catch(err => console.log(err));
-    //
-    await fetch(
-      'http://ec2-18-209-179-4.compute-1.amazonaws.com:8000/hospital/posts/',
-      {
-        method: 'Post',
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        data: JSON.stringify({
-          image: this.state.video.base64,
-          title: 'rambrother',
-          content: 'Sairambrother',
-        }),
-      },
-    )
-      .then(response => {
-        console.log('response');
-      })
-      .catch(err => {
-        console.log(err);
-      });
+    const res = await requestUpload();
+    //console.log(res);
+    const data = await res.json();
+    // console.log(data.url);
+    console.log(this.state.video);
+    await uploadImage(data.url, this.state.video.uri);
   };
 
   toggleVideoPlay() {
