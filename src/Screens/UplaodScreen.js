@@ -1,3 +1,6 @@
+// this page renders the page of upload video, where users can select and upload a video, and has functionalities
+// to upload videos into s3 bucket. aws-sdk client has been used to connect to aws s3 bucket and upload.
+
 import React, {PureComponent} from 'react';
 import {
   StyleSheet,
@@ -30,7 +33,8 @@ export const getBlob = async fileUri => {
   const imageBody = await resp.blob();
   return imageBody;
 };
-
+// this function gets called when an upload image and upload url,presigned by aws s3, is available == video gets
+// uploaded to the s3 bucket.
 export const uploadImage = async (uploadUrl, data) => {
   const imageBody = await getBlob(data);
   console.log(imageBody);
@@ -39,7 +43,9 @@ export const uploadImage = async (uploadUrl, data) => {
     body: imageBody,
   });
 };
-const durl = 'http://18.209.179.4:8000/hospital/get_url/';
+const durl = 'http://18.209.179.4:8000/hospital/get_url/'; // url of the website to get a presigned get_url
+// requestUpload function takes params as username and generates random fileID and requests for a presigned url using these
+// params so that a video can be uploaded from the user's phone
 export const requestUpload = async () => {
   const data = {userName: 'Sairam', fileID: uuid.v4()};
   return fetch(durl, {
